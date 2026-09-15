@@ -100,3 +100,17 @@ return this;
     1. Промежуточные состояния: В процессе вызова цепочки Fluent API объект находится в неполном состоянии. Проверка зависимостей между несколькими полями (cross-field validation, например: набор камер требует батареи >= 60 мин) невозможна при вызове отдельного метода, так как второе поле может быть еще не задано клиентом.
 2. Атомарность: Вызов validate() внутри build() гарантирует, что валидация происходит прямо перед созданием объекта. Если конфигурация ошибочна, метод падаёт до вызова конструктора, предотвращая создание некорректных экземпляров SmartHomeSystem в системе.
 3. Чистота домена: Класс SmartHomeSystem остается чистой immutable-моделью данных без дублирования логики проверок. 
+
+
+![UML Class Diagram](docs/builder-uml.png)
+
+Traceability Table
+
+| Builder Role | Your Class | Responsibility |
+| :--- | :--- | :--- |
+| **Product** | `domain.SmartHomeSystem` | Complex domain object representing a smart home configuration with 10+ parameters. Immutable and accessible only via Builder. |
+| **Builder** | `domain.SmartHomeSystem.Builder` | Static nested class providing a fluent API, step-by-step construction, default values, and internal validation rules. |
+| **Director** | `director.SmartHomeDirector` | Manages and enforces pre-configured system profiles (BASIC, SAFE, ECO) using the Builder instance. |
+| **Client** | `Main` / `SmartHomeSystemTest` | Initiates construction, invokes Director presets or custom Builder chains, and handles built instances. |
+| **Value Object** | `domain.NetworkConfig` | Nested configuration object encapsulated within the Product to represent wireless network settings (SSID, password, frequency). |
+
