@@ -1,25 +1,28 @@
+import director.SmartHomeDirector;
 import domain.SmartHomeSystem;
 
 public class Main {
     public static void main(String[] args) {
-        // Успешный кейс
-        SmartHomeSystem validHome = new SmartHomeSystem.Builder("SYS-101", "Daniyar", "192.168.1.1", "1234")
-                .withCameras()
-                .enableCloudSync()
-                .withBackupBattery(90) // > 60 минут, валидация проходит
-                .build();
+        SmartHomeDirector director = new SmartHomeDirector();
 
-        System.out.println("Успешно создана система: " + validHome.getSystemId());
+        // 1. Сборка BASIC пресета (выведет 🍌)
+        SmartHomeSystem.Builder basicBuilder =
+                new SmartHomeSystem.Builder("SYS-BASIC-01", "Daniyar", "192.168.1.10", "1111");
+        SmartHomeSystem basicHome = director.buildBasicPreset(basicBuilder);
 
-        // Невалидный кейс (упадёт с ошибкой)
-        try {
-            SmartHomeSystem invalidHome = new SmartHomeSystem.Builder("SYS-102", "Daniyar", "192.168.1.1", "1234")
-                    .withCameras()
-                    // Забыли включить enableCloudSync() или указали аккумулятора меньше 60 мин
-                    .withBackupBattery(30)
-                    .build();
-        } catch (Exception e) {
-            System.err.println("Ошибка валидации перехвачена: " + e.getMessage());
-        }
+        // 2. Сборка SAFE пресета
+        SmartHomeSystem.Builder safeBuilder =
+                new SmartHomeSystem.Builder("SYS-SAFE-02", "Daniyar", "192.168.1.11", "9999");
+        SmartHomeSystem safeHome = director.buildSafePreset(safeBuilder);
+
+        // 3. Сборка ECO пресета
+        SmartHomeSystem.Builder ecoBuilder =
+                new SmartHomeSystem.Builder("SYS-ECO-03", "Daniyar", "192.168.1.12", "4321");
+        SmartHomeSystem ecoHome = director.buildEcoPreset(ecoBuilder);
+
+        System.out.println("\n--- Результат успешных сборок ---");
+        System.out.println("BASIC Temp: " + basicHome.getTargetTemperature() + "°C");
+        System.out.println("SAFE Cameras: " + safeHome.isEnableCameras() + ", Battery: " + safeHome.getBackupBatteryMinutes() + "m");
+        System.out.println("ECO Power Draw Limit: " + ecoHome.getMaxPowerDraw() + "W");
     }
 }
