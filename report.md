@@ -14,3 +14,76 @@ SmartHomeSystem home = new SmartHomeSystem(
 
 **3. Проблема комбинаторного взрыва конструкторов (Telescoping Constructor Anti-pattern)**
 Если клиенту нужно задать только `systemId`, `ownerName` и `targetTemperature`, придется либо создавать новый конструктор, либо передавать множество значений по умолчанию в один гигантский конструктор. При росте количества опциональных полей количество необходимых конструкторов растет экспоненциально.
+
+
+**Clean Code: Before $\rightarrow$ After**
+
+Пример 1: Маленькие функции и один уровень абстракции (Small Functions & Single Level of Abstraction)
+
+BEFORE:Логика сборки объекта и проверка правил находились в одном громоздком методе.
+```java
+Javapublic SmartHomeSystem build() {
+if (systemId == null || systemId.isBlank()) throw new IllegalStateException();
+if (targetTemperature < 10.0 || targetTemperature > 35.0) throw new IllegalArgumentException();
+if (securityPin == null || securityPin.length() < 4) throw new IllegalArgumentException();
+if (enableCameras && backupBatteryMinutes < 60) throw new IllegalStateException();
+if (enableCameras && !cloudSyncEnabled) throw new IllegalStateException();
+return new SmartHomeSystem(this);
+}
+```
+AFTER:Выделен отдельный приватный метод validate(). Метод build() теперь отвечает только за координацию шагов сборки и состоит из двух понятных строк.
+```Java
+Javapublic SmartHomeSystem build() {
+validate();
+return new SmartHomeSystem(this);
+}
+
+private void validate() {
+validateSingleFields();
+validateCrossFields();
+}
+```
+Объяснение:Что было не так: Метод build() выполнял две разные задачи — валидацию полей и создание объекта.Принцип Clean Code: One Level of Abstraction per Function и Single Responsibility Principle (SRP).  Почему лучше: Метод build() стал короткой высокоуровневой функцией, а низкоуровневая проверка условий вынесена в специализированный метод.
+
+
+Пример 2: Отказ от флаговых аргументов (Avoiding Flag Arguments)
+
+BEFORE:Передача boolean флагов в сеттеры или конструктор, из-за чего из вызова функции не понятен её смысл.
+
+```Java
+// Клиентский код: не понятно, что означает true и false
+builder.setCameraState(true);
+builder.setSync(false);
+```
+AFTER:Замена флаговых аргументов экспрессивными доменными методами Fluent API без параметров.
+```java
+Javapublic Builder withCameras() {
+this.enableCameras = true;
+return this;
+}
+
+public Builder enableCloudSync() {
+this.cloudSyncEnabled = true;
+return this;
+}
+```
+Объяснение:Что было не так: Передача boolean в аргументы (Flag Arguments) заставляет функцию выполнять разную логику в зависимости от значения (if (flag) ... else ...), а вызов .setCameraState(true) малопонятен.  Принцип Clean Code: Flag Arguments (Глава 3: «Flag arguments are ugly. Passing a boolean into a function is a truly terrible practice»).  Почему лучше: Метод .withCameras() явно говорит о своем намерении и не требует передачи true/false.  
+
+
+Пример 3: Понятные и описательные имена (Descriptive Names)
+
+BEFORE:Использование обобщенных имен методов и параметров.
+```java
+Javapublic Builder setBattery(int b) {
+this.backupBatteryMinutes = b;
+return this;
+}
+```
+AFTER:Использование содержательных доменных имен, указывающих единицы измерения.
+```java
+Javapublic Builder withBackupBattery(int minutes) {
+this.backupBatteryMinutes = minutes;
+return this;
+}
+```
+Объяснение:Что было не так: Имя setBattery(int b) не дает информации о том, в чем измеряется значение (проценты, ватты, минуты, ампер-часы).Принцип Clean Code: Descriptive Naming & Use Intention-Revealing Names.  Почему лучше: Имя withBackupBattery(int minutes) сразу объясняет разработчику, что значение передается в минутах автономной работы.
