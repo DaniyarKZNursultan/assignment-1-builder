@@ -37,9 +37,9 @@ public class SmartHomeSystem {
         private final String hubIpAddress;
         private final String securityPin;
 
-        // Опциональные параметры с разумными дефолтными значениями (Meaningful Default Values)
+        // Опциональные параметры с дефолтными значениями (Meaningful Defaults)
         private boolean enableCameras = false;
-        private boolean enableFireAlarm = true; // по умолчанию пожарка включена
+        private boolean enableFireAlarm = true;
         private double targetTemperature = 22.0;
         private int maxPowerDraw = 3500;
         private int backupBatteryMinutes = 30;
@@ -90,9 +90,42 @@ public class SmartHomeSystem {
             return this;
         }
 
-        // Метод сборки
+        // Метод сборки с предварительным вызовом валидации
         public SmartHomeSystem build() {
+            validate();
             return new SmartHomeSystem(this);
+        }
+
+        // Логика валидации (Part C)
+        private void validate() {
+            // === 3 SINGLE-FIELD RULES ===
+
+            // 1. systemId не должен быть пуст
+            if (systemId == null || systemId.isBlank()) {
+                throw new IllegalStateException("System ID cannot be null or empty");
+            }
+
+            // 2. Температура должна быть в допустимом диапазоне (10.0 - 35.0 °C)
+            if (targetTemperature < 10.0 || targetTemperature > 35.0) {
+                throw new IllegalArgumentException("Target temperature must be between 10.0°C and 35.0°C");
+            }
+
+            // 3. PIN-код должен содержать как минимум 4 символа
+            if (securityPin == null || securityPin.length() < 4) {
+                throw new IllegalArgumentException("Security PIN must be at least 4 digits long");
+            }
+
+            // === 2 CROSS-FIELD RULES ===
+
+            // 4. Индивидуальное ограничение: если включены камеры, аккумулятора должно хватать не менее чем на 60 минут
+            if (enableCameras && backupBatteryMinutes < 60) {
+                throw new IllegalStateException("Security Constraint: Systems with cameras enabled require at least 60 minutes of backup battery");
+            }
+
+            // 5. Зависимость: если включены камеры, обязательна синхронизация с облаком
+            if (enableCameras && !cloudSyncEnabled) {
+                throw new IllegalStateException("Security Constraint: Cameras cannot operate without active cloud sync");
+            }
         }
     }
 
